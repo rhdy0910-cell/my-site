@@ -85,9 +85,12 @@ dialog input,dialog textarea,dialog select{width:100%}
 footer{border-top:1px solid var(--line);padding:1rem;font-size:.85rem;color:var(--mute);display:flex;gap:1.2rem;flex-wrap:wrap}
 @media(max-width:64rem){.app{grid-template-columns:14rem minmax(0,1fr)}.adcol{grid-column:1/-1;position:static;max-width:300px;justify-self:center;width:100%}}
 @media(max-width:46rem){.app{grid-template-columns:1fr;gap:1rem}aside{position:static}.side h2{display:none}#nav{display:flex;gap:.3rem;overflow-x:auto;white-space:nowrap}.adw .ad{aspect-ratio:320/100}.top input[type=search]{max-width:100%;flex:1}.hero{flex-direction:column;text-align:center}}
+#rp{position:fixed;top:0;inset-inline:0;height:3px;background:var(--pri);transform-origin:right;transform:scaleX(0);z-index:50}
+.skip{position:absolute;inset-inline-start:-999px}.skip:focus{inset-inline-start:.5rem;top:.5rem;background:var(--bg);padding:.4rem .8rem;z-index:60;border-radius:6px}
 </style>
 </head>
 <body>
+<a class="skip" href="#ws">تخطَّ إلى المحتوى</a><div id="rp"></div>
 <div class="topbg"><div class="wrap top">
   <span class="av" id="av"></span>
   <a data-l href="/" class="brand"><b id="sn">المكتبة</b><small id="tg"></small></a>
@@ -102,7 +105,7 @@ footer{border-top:1px solid var(--line);padding:1rem;font-size:.85rem;color:var(
   <main id="ws" aria-live="polite"></main>
   <aside class="adcol"><small>إعلان</small><div id="ad1"></div></aside>
 </div>
-<footer class="wrap"><span id="ft"></span><a data-l href="/">من نحن</a><a data-l href="/">تواصل معنا</a><a data-l href="/">سياسة الخصوصية</a></footer>
+<footer class="wrap"><span id="ft"></span><a data-l href="/p/about">من نحن</a><a data-l href="/p/contact">تواصل معنا</a><a data-l href="/p/privacy">سياسة الخصوصية</a></footer>
 <dialog id="dg"><form id="df"></form></dialog>
 <script>
 (function(){
@@ -146,7 +149,7 @@ function ctl(k,id){return eb('تعديل','edit'+k,id)+eb('▲','up'+k,id)+eb('�
 function card(href,t,sub,ex){return '<div class="card"><a data-l href="'+href+'">'+esc(t)+(sub?'<small>'+esc(sub)+'</small>':'')+'</a>'+(ex||'')+'</div>'}
 function nItems(f){return S.itm.filter(f).length}
 function rows(a){return a.length?'<ul class="items">'+a.map(function(i){var c=find(S.cat,i.category_id),s=c&&find(S.sec,c.section_id);return '<li>'+(i.image_url?'<img alt="" loading="lazy" src="'+esc(i.image_url)+'">':'')+'<a data-l href="/i/'+i.id+'">'+esc(i.title)+'<small style="display:block">'+(s?esc(s.name)+' / '+esc(c.name)+'، ':'')+fmt(i.created_at)+'</small></a>'+eb('تعديل','edititem',i.id)+eb('حذف','delitem',i.id)+'</li>'}).join('')+'</ul>':'<p class="empty">لا توجد مواد.</p>'}
-function page(name,crumbs,desc){$('#ttl').textContent=name;$('#crumbs').innerHTML=crumbs||'';document.title=(name==='الرئيسية'?'':name+' | ')+S.cfg.name;var m=document.querySelector('meta[name=description]');m.content=(desc||S.cfg.tagline||S.cfg.bio||'').slice(0,160);var o=document.querySelector('meta[property="og:title"]');o.content=document.title}
+function page(name,crumbs,desc){$('#ttl').textContent=name;$('#crumbs').innerHTML=crumbs||'';document.title=(name==='الرئيسية'?'':name+' | ')+S.cfg.name;var m=document.querySelector('meta[name=description]');m.content=(desc||S.cfg.tagline||S.cfg.bio||'').slice(0,160);var o=document.querySelector('meta[property="og:title"]');o.content=document.title;var cl=document.querySelector('link[rel=canonical]');if(!cl){cl=document.createElement('link');cl.rel='canonical';document.head.appendChild(cl)}cl.href=location.origin+location.pathname}
 function chat(h){return '<div class="chat"><h3>'+h+'</h3><div class="log" id="log" aria-live="polite"></div><div class="add"><input id="ci" placeholder="اكتب سؤالك" aria-label="سؤالك"><button class="btn p" type="button" data-a="ask">اسأل</button></div></div>'}
 function drawLog(){var l=$('#log');if(l){l.innerHTML=S.hist.map(function(h){return '<div class="'+(h.role==='user'?'q':'a')+'">'+esc(h.text)+'</div>'}).join('');l.scrollTop=l.scrollHeight}}
 async function askAI(){var i=$('#ci'),q=i&&i.value.trim();if(!q)return;i.value='';var prev=S.hist.slice(-6);S.hist.push({role:'user',text:q},{role:'assistant',text:'...'});drawLog();
@@ -173,10 +176,11 @@ return '<div class="th"><b>'+esc(t.author)+'</b> <small>'+fmt(t.created_at)+'</s
 async function vSaved(){page('المحفوظات','<a data-l href="/">الرئيسية</a>');var s=saved();return rows(S.itm.filter(function(i){return s.indexOf(i.id)>-1}))}
 async function vSearch(q){page('نتائج البحث','<a data-l href="/">الرئيسية</a>');var c=q.replace(/[,()%*\\]/g,' ').trim();if(!c)return '<p class="empty">اكتب كلمة للبحث.</p>';
 var r=await db(SB.from('items').select('id,title,category_id,image_url,created_at').or('title.ilike.%'+c+'%,body.ilike.%'+c+'%').limit(30));return rows(r)}
+async function vPage(slug){var r=await db(SB.from('pages').select('*').eq('slug',slug).maybeSingle());if(!r)return nf();page(r.title,'<a data-l href="/">الرئيسية</a>',r.body);S.ctx='صفحة: '+r.title+'\n'+r.body.slice(0,4000);return (isOn()?'<div class="mt"><button class="btn p" data-a="editpage" data-id="'+esc(slug)+'">تعديل الصفحة</button></div>':'')+'<div class="body">'+esc(r.body).split('\n').map(function(x){return x?'<p>'+x+'</p>':''}).join('')+'</div>'}
 function vAssist(){page('المساعد','<a data-l href="/">الرئيسية</a>');S.ctx='الصفحة: المساعد العام';return '<p>اسأل عن الموقع أو موادّه أو أي موضوع عام.</p>'+chat('المساعد')}
 function nf(){page('غير موجود','');return '<p class="empty">الصفحة غير موجودة. <a data-l href="/" style="color:var(--pri)">العودة إلى الرئيسية</a></p>'}
 async function route(){var p=location.pathname,q=new URLSearchParams(location.search).get('q'),m=p.match(/^\/(s|c|i|t)\/([\w-]+)/),h;
-try{if(p==='/search')h=await vSearch(q||'');else if(m){S.ctxSec=null;h=await({s:vSec,c:vCat,i:vItem,t:vThread})[m[1]](m[2])}else if(p==='/forum')h=await vForum();else if(p==='/saved')h=await vSaved();else if(p==='/assistant')h=vAssist();else h=await vHome()}catch(e){h='<p class="empty">حدث خطأ أثناء التحميل.</p>'}
+try{if(p==='/search')h=await vSearch(q||'');else if(m){S.ctxSec=null;h=await({s:vSec,c:vCat,i:vItem,t:vThread})[m[1]](m[2])}else if(p==='/forum')h=await vForum();else if(p==='/saved')h=await vSaved();else if(p.indexOf('/p/')===0)h=await vPage(p.slice(3));else if(p==='/assistant')h=vAssist();else h=await vHome()}catch(e){h='<p class="empty">حدث خطأ أثناء التحميل.</p>'}
 ws.innerHTML=h;chrome();drawLog()}
 function nav(p,rep){history[rep?'replaceState':'pushState']({},'',p);route();if(!rep)window.scrollTo(0,0)}
 async function reload(){await load();await who();await route()}
@@ -223,6 +227,7 @@ login:function(){ask('الدخول',[{l:'البريد الإلكتروني',t:'e
 ask:askAI,
 speak:function(){if(!window.speechSynthesis)return say('المتصفح لا يدعم القراءة الصوتية.');speechSynthesis.cancel();var u=new SpeechSynthesisUtterance(S.cur);u.lang='ar';speechSynthesis.speak(u)},
 stop:function(){window.speechSynthesis&&speechSynthesis.cancel()},
+editpage:async function(b){var r=await db(SB.from('pages').select('*').eq('slug',b.dataset.id).single());ask('تعديل الصفحة',[{l:'العنوان',v:r.title},{l:'النص',t:'area',v:r.body}],[['ok','حفظ']],async function(v){if(!v[0])throw 0;await db(SB.from('pages').update({title:v[0],body:v[1],updated_at:new Date().toISOString()}).eq('slug',r.slug));await reload()})},
 fs:function(b){fs=Math.min(1.6,Math.max(.85,fs+.1*b.dataset.d));document.documentElement.style.setProperty('--fs',fs+'rem')},
 share:function(){var u=location.href;if(navigator.share)navigator.share({title:document.title,url:u}).catch(function(){});else if(navigator.clipboard)navigator.clipboard.writeText(u).then(function(){say('تم نسخ الرابط.')})},
 save:function(b){var s=saved(),i=s.indexOf(b.dataset.id);if(i>-1)s.splice(i,1);else s.push(b.dataset.id);try{localStorage.setItem('saved',JSON.stringify(s))}catch(e){}route()}};
@@ -231,6 +236,7 @@ document.addEventListener('click',function(e){var a=e.target.closest('a[data-l]'
 var b=e.target.closest('[data-a]');if(b&&A[b.dataset.a])A[b.dataset.a](b)});
 document.addEventListener('keydown',function(e){if(e.key==='Enter'&&e.target.id==='ci')askAI()});
 window.addEventListener('popstate',route);
+window.addEventListener('scroll',function(){var d=document.documentElement,h=d.scrollHeight-d.clientHeight;$('#rp').style.transform='scaleX('+(h>0?d.scrollTop/h:0)+')'},{passive:true});
 var tm;$('#q').addEventListener('input',function(e){clearTimeout(tm);var v=e.target.value.trim();tm=setTimeout(function(){nav(v?'/search?q='+encodeURIComponent(v):'/',true)},350)});
 $('#th').addEventListener('click',function(){var r=document.documentElement,d=r.dataset.theme?r.dataset.theme==='dark':matchMedia('(prefers-color-scheme:dark)').matches;r.dataset.theme=d?'light':'dark';try{localStorage.setItem('th',r.dataset.theme)}catch(e){}});
 $('#lg').addEventListener('click',async function(){if(S.user){await SB.auth.signOut();S.edit=false;await reload()}else A.login()});
