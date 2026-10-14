@@ -87,6 +87,20 @@ footer{border-top:1px solid var(--line);padding:1rem;font-size:.85rem;color:var(
 @media(max-width:46rem){.app{grid-template-columns:1fr;gap:1rem}aside{position:static}.side h2{display:none}#nav{display:flex;gap:.3rem;overflow-x:auto;white-space:nowrap}.adw .ad{aspect-ratio:320/100}.top input[type=search]{max-width:100%;flex:1}.hero{flex-direction:column;text-align:center}}
 #rp{position:fixed;top:0;inset-inline:0;height:3px;background:var(--pri);transform-origin:right;transform:scaleX(0);z-index:50}
 .skip{position:absolute;inset-inline-start:-999px}.skip:focus{inset-inline-start:.5rem;top:.5rem;background:var(--bg);padding:.4rem .8rem;z-index:60;border-radius:6px}
+html,body{max-width:100%;overflow-x:hidden}
+.app>*{min-width:0}
+.body,ul.items a,.card>a,.th,main h2{overflow-wrap:anywhere}
+dialog{max-height:88vh;overflow:auto;margin:auto}
+@media(max-width:46rem){
+.app{grid-template-columns:minmax(0,1fr)}
+#nav{max-width:100%;-webkit-overflow-scrolling:touch}
+.top{flex-wrap:wrap;gap:.5rem}
+.brand{flex:1;min-width:0}
+.top input[type=search]{order:3;flex:1 1 100%;max-width:100%;width:100%;margin:0}
+.top .btn{padding:.2rem .6rem;font-size:.82rem}
+.titlebar h1{font-size:1.25rem}
+.hero{padding:1rem}
+}
 </style>
 </head>
 <body>
@@ -142,7 +156,7 @@ var cat=p.indexOf('/c/')===0?find(S.cat,p.slice(3)):null;if(cat)sec=find(S.sec,c
 var cp=(S.ctxSec&&p.indexOf('/i/')===0)?S.ctxSec:null;if(cp)sec=find(S.sec,cp);
 var nv='<div class="row"><a data-l href="/"'+(p==='/'?' aria-current="page"':'')+'>الرئيسية</a></div>'+S.sec.map(function(s){return '<div class="row"><a data-l href="/s/'+s.id+'"'+(sec&&sec.id===s.id?' aria-current="page"':'')+'>'+esc(s.name)+'</a></div>'}).join('')+'<div class="row"><a data-l href="/forum"'+(p.indexOf('/forum')===0||p.indexOf('/t/')===0?' aria-current="page"':'')+'>المنتدى</a></div><div class="row"><a data-l href="/saved"'+(p==='/saved'?' aria-current="page"':'')+'>المحفوظات</a></div><div class="row"><a data-l href="/assistant"'+(p==='/assistant'?' aria-current="page"':'')+'>المساعد</a></div>';
 $('#nav').innerHTML=nv}
-function adbox(h,ph){return '<div class="ad">'+(h?'<iframe sandbox="allow-scripts allow-popups" srcdoc="'+esc(h)+'" title="إعلان" loading="lazy"></iframe>':'<span>مساحتك الإعلانية<br><small>'+ph+'</small></span>')+'</div>'}
+function adbox(h,ph){return '<div class="ad">'+(h?'<iframe sandbox="allow-scripts allow-popups" srcdoc="'+esc(h)+'" title="إعلان" loading="lazy"></iframe>':'<span>مساحتك الإعلانية<br><small dir="ltr">'+ph+'</small></span>')+'</div>'}
 function wide(){return '<div class="adw"><small>إعلان</small>'+adbox(S.ad[1],'728 × 90')+'</div>'}
 function eb(l,a,id){return isOn()?'<button class="x" type="button" data-a="'+a+'" data-id="'+id+'">'+l+'</button>':''}
 function ctl(k,id){return eb('تعديل','edit'+k,id)+eb('▲','up'+k,id)+eb('▼','down'+k,id)+eb('دمج','merge'+k,id)+(k==='cat'?eb('نقل','movecat',id):'')+eb('حذف','del'+k,id)}
