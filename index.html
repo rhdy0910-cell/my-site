@@ -101,6 +101,16 @@ dialog{max-height:88vh;overflow:auto;margin:auto}
 .titlebar h1{font-size:1.25rem}
 .hero{padding:1rem}
 }
+
+.app{grid-template-columns:14rem minmax(0,1fr) 50px;align-items:stretch}
+.side{align-self:start}
+.adcol{position:static;grid-column:auto;max-width:none;justify-self:stretch;width:auto;padding:0;border-inline-start:1px solid var(--line)}
+.adcol .ad{aspect-ratio:auto;width:50px;height:calc(100vh - 2rem);min-height:10rem;position:sticky;top:1rem;border:0;border-radius:0;background:var(--soft)}
+.adcol .ad span{writing-mode:vertical-rl;font-size:.75rem}
+#topad .ad{aspect-ratio:auto;width:100%;height:60px;max-height:60px;border-width:0 0 1px;border-radius:0}
+#topad .ad span{font-size:.78rem}
+@media(max-width:64rem){.app{grid-template-columns:14rem minmax(0,1fr) 50px}.adcol{grid-column:auto;max-width:none;justify-self:stretch;width:auto}}
+@media(max-width:46rem){.app{grid-template-columns:minmax(0,1fr)}.adcol{border:0}.adcol .ad{width:100%;height:50px;min-height:0;position:static}.adcol .ad span{writing-mode:horizontal-tb}}
 </style>
 </head>
 <body>
@@ -113,11 +123,12 @@ dialog{max-height:88vh;overflow:auto;margin:auto}
   <button class="btn" id="lg" type="button">دخول</button>
 </div></div>
 <div class="wrap titlebar"><div class="crumbs" id="crumbs"></div><h1 id="ttl">الرئيسية</h1><div id="tools"></div></div>
+<div id="topad"></div>
 <div class="wrap" id="msg" hidden></div>
 <div class="wrap app">
   <aside class="side"><h2>الأقسام</h2><div id="nav"></div></aside>
   <main id="ws" aria-live="polite"></main>
-  <aside class="adcol"><small>إعلان</small><div id="ad1"></div></aside>
+  <aside class="adcol"><div id="ad1"></div></aside>
 </div>
 <footer class="wrap"><span id="ft"></span><a data-l href="/p/about">من نحن</a><a data-l href="/p/contact">تواصل معنا</a><a data-l href="/p/privacy">سياسة الخصوصية</a></footer>
 <dialog id="dg"><form id="df"></form></dialog>
@@ -154,14 +165,14 @@ if(S.owner)t+='<button class="btn'+(S.edit?' p':'')+'" data-a="toggle">'+(S.edit
 if(isOn())t+='<button class="btn" data-a="cfg">إعدادات الموقع</button><button class="btn" data-a="addsec">قسم جديد</button>';
 $('#tools').innerHTML=t;
 var ad=(c.ad_html||'').split('<!--slot2-->');S.ad=[ad[0]||'',ad[1]||''];
-$('#ad1').innerHTML=adbox(S.ad[0],'300 × 250');
+$('#ad1').innerHTML=adbox(S.ad[0],'50px');$('#topad').innerHTML=adbox(S.ad[1],'60px');
 var p=location.pathname,sec=p.indexOf('/s/')===0?find(S.sec,p.slice(3)):null;
 var cat=p.indexOf('/c/')===0?find(S.cat,p.slice(3)):null;if(cat)sec=find(S.sec,cat.section_id);
 var cp=(S.ctxSec&&p.indexOf('/i/')===0)?S.ctxSec:null;if(cp)sec=find(S.sec,cp);
 var nv='<div class="row"><a data-l href="/"'+(p==='/'?' aria-current="page"':'')+'>الرئيسية</a></div>'+S.sec.map(function(s){return '<div class="row"><a data-l href="/s/'+s.id+'"'+(sec&&sec.id===s.id?' aria-current="page"':'')+'>'+esc(s.name)+'</a></div>'}).join('')+'<div class="row"><a data-l href="/forum"'+(p.indexOf('/forum')===0||p.indexOf('/t/')===0?' aria-current="page"':'')+'>المنتدى</a></div><div class="row"><a data-l href="/saved"'+(p==='/saved'?' aria-current="page"':'')+'>المحفوظات</a></div><div class="row"><a data-l href="/assistant"'+(p==='/assistant'?' aria-current="page"':'')+'>المساعد</a></div>';
 $('#nav').innerHTML=nv}
 function adbox(h,ph){return '<div class="ad">'+(h?'<iframe sandbox="allow-scripts allow-popups" srcdoc="'+esc(h)+'" title="إعلان" loading="lazy"></iframe>':'<span>مساحتك الإعلانية<br><small dir="ltr">'+ph+'</small></span>')+'</div>'}
-function wide(){return '<div class="adw"><small>إعلان</small>'+adbox(S.ad[1],'728 × 90')+'</div>'}
+function wide(){return ''}
 function eb(l,a,id){return isOn()?'<button class="x" type="button" data-a="'+a+'" data-id="'+id+'">'+l+'</button>':''}
 function ctl(k,id){return eb('تعديل','edit'+k,id)+eb('▲','up'+k,id)+eb('▼','down'+k,id)+eb('دمج','merge'+k,id)+(k==='cat'?eb('نقل','movecat',id):'')+eb('حذف','del'+k,id)}
 function card(href,t,sub,ex){return '<div class="card"><a data-l href="'+href+'">'+esc(t)+(sub?'<small>'+esc(sub)+'</small>':'')+'</a>'+(ex||'')+'</div>'}
@@ -221,7 +232,7 @@ async function swap(list,tbl,id,d){var l=list.filter(function(x){return tbl==='s
 await db(SB.from(tbl).update({position:pb}).eq('id',a.id));await db(SB.from(tbl).update({position:pa}).eq('id',b.id));await reload()}
 var A={
 toggle:function(){S.edit=!S.edit;chrome();route()},
-cfg:function(){var c=S.cfg;ask('إعدادات الموقع',[{l:'اسم الموقع (يمكنك كتابة اسمك)',v:c.name},{l:'العبارة التعريفية',v:c.tagline},{l:'نبذة عنك',t:'area',v:c.bio},{l:'صورة البروفايل (اتركها فارغة للإبقاء على الحالية)',t:'file'},{l:'كود الإعلان (HTML). افصل الإعلان الثاني بالسطر <!--slot2-->',t:'area',v:c.ad_html,d:1}],[['ok','حفظ']],async function(v){var u=await up(v[3]);var o={name:v[0]||'المكتبة',tagline:v[1],bio:v[2],ad_html:v[4]};if(u)o.avatar_url=u;await db(SB.from('site_settings').update(o).eq('id',1));await reload()})},
+cfg:function(){var c=S.cfg;ask('إعدادات الموقع',[{l:'اسم الموقع (يمكنك كتابة اسمك)',v:c.name},{l:'العبارة التعريفية',v:c.tagline},{l:'نبذة عنك',t:'area',v:c.bio},{l:'صورة البروفايل (اتركها فارغة للإبقاء على الحالية)',t:'file'},{l:'كود الإعلان (HTML): الأول للشريط الجانبي (عرضه 50 بكسل)، ثم سطر <!--slot2--> ثم الثاني للشريط العلوي (ارتفاعه 60 بكسل)',t:'area',v:c.ad_html,d:1}],[['ok','حفظ']],async function(v){var u=await up(v[3]);var o={name:v[0]||'المكتبة',tagline:v[1],bio:v[2],ad_html:v[4]};if(u)o.avatar_url=u;await db(SB.from('site_settings').update(o).eq('id',1));await reload()})},
 claim:function(){ask('تفعيل ملكية الموقع',[{t:'note',l:'أدخل رمز التفعيل الذي أعطاك إياه Claude. لا يعمل إلا مرة واحدة.'},{l:'الرمز',d:1}],[['ok','تفعيل']],async function(v){var r=await SB.rpc('claim_owner',{code:v[1]});if(r.error||r.data!==true){say('الرمز غير صحيح أو الموقع مملوك بالفعل.');throw 0}say('تم تفعيل ملكيتك للموقع.');await reload()})},
 addsec:function(){ask('قسم جديد',[{l:'اسم القسم'}],[['ok','إضافة']],async function(v){if(!v[0])throw 0;await db(SB.from('sections').insert({name:v[0],position:S.sec.length+1}));await reload()})},
 editsec:function(b){var s=find(S.sec,b.dataset.id);ask('تعديل القسم',[{l:'الاسم',v:s.name}],[['ok','حفظ']],async function(v){if(!v[0])throw 0;await db(SB.from('sections').update({name:v[0]}).eq('id',s.id));await reload()})},
