@@ -111,6 +111,9 @@ dialog{max-height:88vh;overflow:auto;margin:auto}
 #topad .ad span{font-size:.78rem}
 @media(max-width:64rem){.app{grid-template-columns:14rem minmax(0,1fr) 50px}.adcol{grid-column:auto;max-width:none;justify-self:stretch;width:auto}}
 @media(max-width:46rem){.app{grid-template-columns:minmax(0,1fr)}.adcol{border:0}.adcol .ad{width:100%;height:50px;min-height:0;position:static}.adcol .ad span{writing-mode:horizontal-tb}}
+.pbar{height:8px;background:var(--ps);border-radius:99px;overflow:hidden;margin:.6rem 0}
+.pbar i{display:block;height:100%;background:var(--pri)}
+.st{width:1.8rem;height:1.8rem;border-radius:50%;background:var(--ps);color:var(--pri);display:grid;place-items:center;font-size:.85rem;flex:none}
 </style>
 </head>
 <body>
@@ -136,7 +139,7 @@ dialog{max-height:88vh;overflow:auto;margin:auto}
 (function(){
 var URL_='https://bzscqeatttfphmzxcfyo.supabase.co',KEY='sb_publishable_CLdRxUS4QKThTkBCY7XYgQ_HCtdk9kT';
 var SB=supabase.createClient(URL_,KEY);
-var S={sec:[],cat:[],itm:[],cfg:{name:'المكتبة',tagline:'',bio:'',avatar_url:null,ad_html:'',owner_id:null},user:null,owner:false,edit:false,hist:[],ctx:''};
+var S={sec:[],cat:[],itm:[],cfg:{name:'المكتبة',tagline:'',bio:'',avatar_url:null,ad_html:'',owner_id:null},user:null,owner:false,edit:false,hist:[],ctx:'',paths:[],pi:[]};
 var $=function(s){return document.querySelector(s)},ws=$('#ws'),fs=1.05;
 function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
 function say(t){var m=$('#msg');m.textContent=t||'';m.hidden=!t;if(t)setTimeout(function(){m.hidden=true},7000)}
@@ -152,8 +155,8 @@ function prog(cid){var a=S.itm.filter(function(i){return i.category_id===cid}),d
 function arErr(m){m=String(m||'');if(/Invalid login/i.test(m))return 'البريد أو كلمة المرور غير صحيحة.';if(/not confirmed/i.test(m))return 'لم يتم تأكيد بريدك بعد. افتح رسالة التأكيد (وراجع البريد المزعج)، أو اضغط «إعادة إرسال التأكيد».';if(/already registered/i.test(m))return 'هذا البريد مسجّل بالفعل، اضغط «دخول».';if(/rate limit/i.test(m))return 'أُرسلت رسائل كثيرة، حاول بعد قليل.';if(/at least|weak|short/i.test(m))return 'كلمة المرور ضعيفة أو قصيرة (6 أحرف على الأقل).';if(/valid email|invalid.*email/i.test(m))return 'صيغة البريد غير صحيحة.';return m}
 function isOn(){return S.edit&&S.owner}
 async function load(){
-var r=await Promise.all([SB.from('site_settings').select('*').eq('id',1).single(),SB.from('sections').select('*').order('position'),SB.from('categories').select('*').order('position'),SB.from('items').select('id,category_id,title,url,image_url,created_at').order('created_at',{ascending:false}).limit(2000)]);
-if(r[0].data)S.cfg=r[0].data;S.sec=r[1].data||[];S.cat=r[2].data||[];S.itm=r[3].data||[];
+var r=await Promise.all([SB.from('site_settings').select('*').eq('id',1).single(),SB.from('sections').select('*').order('position'),SB.from('categories').select('*').order('position'),SB.from('items').select('id,category_id,title,url,image_url,created_at').order('created_at',{ascending:false}).limit(2000),SB.from('paths').select('*').order('position'),SB.from('path_items').select('*').order('position')]);
+if(r[0].data)S.cfg=r[0].data;S.sec=r[1].data||[];S.cat=r[2].data||[];S.itm=r[3].data||[];S.paths=r[4].data||[];S.pi=r[5].data||[];
 if(r.some(function(x){return x.error}))say('تعذر تحميل البيانات، حدّث الصفحة.')}
 async function who(){var s=(await SB.auth.getSession()).data.session;S.user=s?s.user:null;S.owner=false;if(S.user){var r=await SB.rpc('is_owner');S.owner=r.data===true}if(!S.owner)S.edit=false}
 function chrome(){var c=S.cfg;$('#sn').textContent=c.name;$('#tg').textContent=c.tagline||'';$('#ft').textContent='© '+c.name;
@@ -186,7 +189,7 @@ var idx=S.sec.map(function(s){return s.name+': '+S.cat.filter(function(c){return
 var out;try{var r=await fetch(URL_+'/functions/v1/assistant',{method:'POST',headers:{'Content-Type':'application/json',apikey:KEY},body:JSON.stringify({question:q,context:S.ctx,index:idx.slice(0,4000),site:S.cfg.name,mode:($('#cm')||{}).value||'direct',history:prev})});var j=await r.json();out=j.text||j.error||'لم يصل رد.'}catch(e){out='تعذر الاتصال بالمساعد الآن.'}
 S.hist[S.hist.length-1]={role:'assistant',text:out};drawLog()}
 async function vHome(){page('الرئيسية','');S.ctx='الصفحة: الرئيسية';var c=S.cfg;
-return '<div class="hero">'+(c.avatar_url?'<img class="av" alt="" src="'+esc(c.avatar_url)+'">':'<span class="av">'+esc(c.name.charAt(0))+'</span>')+'<div><h2>'+esc(c.name)+'</h2>'+(c.tagline?'<p>'+esc(c.tagline)+'</p>':'')+(c.bio?'<p>'+esc(c.bio)+'</p>':'')+'</div></div><h2>الأقسام</h2><div class="grid">'+S.sec.map(function(s){return card('/s/'+s.id,s.name,nItems(function(i){var k=find(S.cat,i.category_id);return k&&k.section_id===s.id})+' مادة')}).join('')+'</div>'+wide()+'<h2>الأحدث</h2>'+rows(S.itm.slice(0,8))}
+return '<div class="hero">'+(c.avatar_url?'<img class="av" alt="" src="'+esc(c.avatar_url)+'">':'<span class="av">'+esc(c.name.charAt(0))+'</span>')+'<div><h2>'+esc(c.name)+'</h2>'+(c.tagline?'<p>'+esc(c.tagline)+'</p>':'')+(c.bio?'<p>'+esc(c.bio)+'</p>':'')+'</div></div><h2>الأقسام</h2><div class="grid">'+S.sec.map(function(s){return card('/s/'+s.id,s.name,nItems(function(i){var k=find(S.cat,i.category_id);return k&&k.section_id===s.id})+' مادة')}).join('')+'</div>'+pathsHtml()+wide()+'<h2>الأحدث</h2>'+rows(S.itm.slice(0,8))}
 async function vSec(id){var s=find(S.sec,id);if(!s)return nf();page(s.name,'<a data-l href="/">الرئيسية</a>');S.ctx='الصفحة: قسم '+s.name;
 return '<h2>التصنيفات</h2><div class="grid">'+S.cat.filter(function(c){return c.section_id===id}).map(function(c){return card('/c/'+c.id,c.name,prog(c.id),ctl('cat',c.id))}).join('')+'</div>'+(isOn()?'<div class="add"><button class="btn p" data-a="addcat" data-id="'+id+'">تصنيف جديد</button></div>':'')+wide()}
 async function vCat(id){var c=find(S.cat,id);if(!c)return nf();var s=find(S.sec,c.section_id);page(c.name,'<a data-l href="/">الرئيسية</a> › <a data-l href="/s/'+s.id+'">'+esc(s.name)+'</a>');S.ctx='الصفحة: تصنيف '+c.name+' في '+s.name;S.ctxSec=s.id;
@@ -202,6 +205,12 @@ async function vThread(id){var t=await db(SB.from('threads').select('*').eq('id'
 page(t.title,'<a data-l href="/">الرئيسية</a> › <a data-l href="/forum">المنتدى</a>',t.body);S.ctx='موضوع في المنتدى: '+t.title+'\n'+t.body.slice(0,3000);
 var own=function(x){return S.user&&(x.user_id===S.user.id||S.owner)};
 return '<div class="th"><b>'+esc(t.author)+'</b> <small>'+fmt(t.created_at)+'</small><p>'+esc(t.body)+'</p>'+(own(t)?'<button class="x" data-a="delthread" data-id="'+id+'">حذف الموضوع</button>':'')+'</div><h2>الردود ('+r.length+')</h2>'+r.map(function(x){return '<div class="th"><b>'+esc(x.author)+'</b> <small>'+fmt(x.created_at)+'</small><p>'+esc(x.body)+'</p>'+(own(x)?'<button class="x" data-a="delreply" data-id="'+x.id+'" data-t="'+id+'">حذف</button>':'')+'</div>'}).join('')+'<div class="add"><button class="btn p" data-a="reply" data-id="'+id+'">إضافة رد</button></div>'}
+function pathItems(id){return S.pi.filter(function(x){return x.path_id===id}).map(function(x){return find(S.itm,x.item_id)}).filter(Boolean)}
+function pathProg(id){var a=pathItems(id),d=a.filter(function(i){return isDone(i.id)}).length;return d+' من '+a.length+' مادة'}
+function pathsHtml(){if(!S.paths.length&&!isOn())return '';return '<h2>مسارات التعلّم</h2><div class="grid">'+S.paths.map(function(x){return card('/path/'+x.id,x.name,pathProg(x.id),eb('تعديل','editpath',x.id)+eb('حذف','delpath',x.id))}).join('')+'</div>'+(isOn()?'<div class="add"><button class="btn p" data-a="addpath">مسار جديد</button></div>':'')}
+async function vPath(id){var pa=find(S.paths,id);if(!pa)return nf();page(pa.name,'<a data-l href="/">الرئيسية</a>',pa.description);S.ctx='مسار تعلّم: '+pa.name;
+var its=pathItems(id),d=its.filter(function(i){return isDone(i.id)}).length,n=its.length;
+return (pa.description?'<p>'+esc(pa.description)+'</p>':'')+'<div class="pbar" role="progressbar" aria-valuemin="0" aria-valuemax="'+n+'" aria-valuenow="'+d+'"><i style="width:'+(n?Math.round(d*100/n):0)+'%"></i></div><small>'+d+' من '+n+' مادة'+(n&&d===n?'، أتممت هذا المسار 🎉':'')+'</small>'+(n?'<ul class="items">'+its.map(function(i,k){return '<li><span class="st">'+(isDone(i.id)?'✓':(k+1))+'</span><a data-l href="/i/'+i.id+'">'+esc(i.title)+'</a>'+eb('إزالة','delpi',id+'|'+i.id)+'</li>'}).join('')+'</ul>':'<p class="empty">لا توجد مواد في هذا المسار بعد.</p>')+(isOn()?'<div class="add"><button class="btn p" data-a="addpi" data-id="'+id+'">إضافة مادة للمسار</button></div>':'')}
 async function vSaved(){page('المحفوظات','<a data-l href="/">الرئيسية</a>');var s=saved();return rows(S.itm.filter(function(i){return s.indexOf(i.id)>-1}))}
 async function vSearch(q){page('نتائج البحث','<a data-l href="/">الرئيسية</a>');var c=q.replace(/[,()%*\\]/g,' ').trim();if(!c)return '<p class="empty">اكتب كلمة للبحث.</p>';
 var r=await db(SB.from('items').select('id,title,category_id,image_url,created_at').or('title.ilike.%'+c+'%,body.ilike.%'+c+'%').limit(30));return rows(r)}
@@ -209,7 +218,7 @@ async function vPage(slug){var r=await db(SB.from('pages').select('*').eq('slug'
 function vAssist(){page('المساعد','<a data-l href="/">الرئيسية</a>');S.ctx='الصفحة: المساعد العام';return '<p>اسأل عن الموقع أو موادّه أو أي موضوع عام.</p>'+chat('المساعد')}
 function nf(){page('غير موجود','');return '<p class="empty">الصفحة غير موجودة. <a data-l href="/" style="color:var(--pri)">العودة إلى الرئيسية</a></p>'}
 async function route(){var p=location.pathname,q=new URLSearchParams(location.search).get('q'),m=p.match(/^\/(s|c|i|t)\/([\w-]+)/),h;
-try{if(p==='/search')h=await vSearch(q||'');else if(m){S.ctxSec=null;h=await({s:vSec,c:vCat,i:vItem,t:vThread})[m[1]](m[2])}else if(p==='/forum')h=await vForum();else if(p==='/saved')h=await vSaved();else if(p.indexOf('/p/')===0)h=await vPage(p.slice(3));else if(p==='/assistant')h=vAssist();else h=await vHome()}catch(e){h='<p class="empty">حدث خطأ أثناء التحميل.</p>'}
+try{if(p==='/search')h=await vSearch(q||'');else if(m){S.ctxSec=null;h=await({s:vSec,c:vCat,i:vItem,t:vThread})[m[1]](m[2])}else if(p==='/forum')h=await vForum();else if(p==='/saved')h=await vSaved();else if(p.indexOf('/path/')===0)h=await vPath(p.slice(6));else if(p.indexOf('/p/')===0)h=await vPage(p.slice(3));else if(p==='/assistant')h=vAssist();else h=await vHome()}catch(e){h='<p class="empty">حدث خطأ أثناء التحميل.</p>'}
 ws.innerHTML=h;chrome();drawLog()}
 function nav(p,rep){history[rep?'replaceState':'pushState']({},'',p);route();if(!rep)window.scrollTo(0,0)}
 async function reload(){await load();await who();await route()}
@@ -259,6 +268,11 @@ stop:function(){window.speechSynthesis&&speechSynthesis.cancel()},
 editpage:async function(b){var r=await db(SB.from('pages').select('*').eq('slug',b.dataset.id).single());ask('تعديل الصفحة',[{l:'العنوان',v:r.title},{l:'النص',t:'area',v:r.body}],[['ok','حفظ']],async function(v){if(!v[0])throw 0;await db(SB.from('pages').update({title:v[0],body:v[1],updated_at:new Date().toISOString()}).eq('slug',r.slug));await reload()})},
 fs:function(b){fs=Math.min(1.6,Math.max(.85,fs+.1*b.dataset.d));document.documentElement.style.setProperty('--fs',fs+'rem')},
 share:function(){var u=location.href;if(navigator.share)navigator.share({title:document.title,url:u}).catch(function(){});else if(navigator.clipboard)navigator.clipboard.writeText(u).then(function(){say('تم نسخ الرابط.')})},
+addpath:function(){ask('مسار جديد',[{l:'اسم المسار'},{l:'وصف قصير',t:'area'}],[['ok','إضافة']],async function(v){if(!v[0])throw 0;await db(SB.from('paths').insert({name:v[0],description:v[1],position:S.paths.length+1}));await reload()})},
+editpath:function(b){var q=find(S.paths,b.dataset.id);ask('تعديل المسار',[{l:'الاسم',v:q.name},{l:'الوصف',t:'area',v:q.description}],[['ok','حفظ']],async function(v){if(!v[0])throw 0;await db(SB.from('paths').update({name:v[0],description:v[1]}).eq('id',q.id));await reload()})},
+delpath:function(b){var q=find(S.paths,b.dataset.id);confirmDel('سيُحذف المسار «'+q.name+'» دون حذف مواده.',async function(){await db(SB.from('paths').delete().eq('id',q.id));history.replaceState({},'','/')})},
+addpi:function(b){var id=b.dataset.id,have=S.pi.filter(function(x){return x.path_id===id}).map(function(x){return x.item_id}),o=S.itm.filter(function(i){return have.indexOf(i.id)<0}).map(function(i){return[i.id,i.title]});if(!o.length)return say('لا توجد مواد أخرى لإضافتها.');ask('إضافة مادة للمسار',[{l:'المادة',t:'select',o:o}],[['ok','إضافة']],async function(v){await db(SB.from('path_items').insert({path_id:id,item_id:v[0],position:have.length+1}));await reload()})},
+delpi:function(b){var k=b.dataset.id.split('|');confirmDel('تُزال المادة من المسار فقط ولا تُحذف.',function(){return db(SB.from('path_items').delete().eq('path_id',k[0]).eq('item_id',k[1]))})},
 done:function(b){var s=doneList(),i=s.indexOf(b.dataset.id);if(i>-1)s.splice(i,1);else s.push(b.dataset.id);try{localStorage.setItem('done',JSON.stringify(s))}catch(e){}route()},
 quick:function(b){var i=$('#ci');if(i){i.value=b.dataset.q;askAI()}},
 save:function(b){var s=saved(),i=s.indexOf(b.dataset.id);if(i>-1)s.splice(i,1);else s.push(b.dataset.id);try{localStorage.setItem('saved',JSON.stringify(s))}catch(e){}route()}};
